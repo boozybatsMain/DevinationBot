@@ -11,32 +11,41 @@ export async function sendComposedMessage(
   chatId: number,
   msg: ComposedMessage,
 ): Promise<boolean> {
+  if (!msg.text && !msg.imageFileId) {
+    throw new Error("Cannot send message: both text and image are empty");
+  }
+
   const keyboard = buildInlineKeyboard(msg.buttons);
+  const replyMarkup = keyboard.inline_keyboard.length > 0 ? keyboard : undefined;
 
   if (!msg.imageFileId) {
     // Text-only message
     await api.sendMessage(chatId, msg.text, {
       parse_mode: "HTML",
-      reply_markup: keyboard.inline_keyboard.length > 0 ? keyboard : undefined,
+      reply_markup: replyMarkup,
     });
     return true;
   }
 
   if (msg.imagePosition === "below") {
     // Text first, then photo below
-    await api.sendMessage(chatId, msg.text, {
-      parse_mode: "HTML",
-      reply_markup: keyboard.inline_keyboard.length > 0 ? keyboard : undefined,
+    if (msg.text) {
+      await api.sendMessage(chatId, msg.text, {
+        parse_mode: "HTML",
+        reply_markup: replyMarkup,
+      });
+    }
+    await api.sendPhoto(chatId, msg.imageFileId, {
+      reply_markup: !msg.text ? replyMarkup : undefined,
     });
-    await api.sendPhoto(chatId, msg.imageFileId);
     return true;
   }
 
   // Default: photo above text (photo with caption)
   await api.sendPhoto(chatId, msg.imageFileId, {
-    caption: msg.text,
+    caption: msg.text || undefined,
     parse_mode: "HTML",
-    reply_markup: keyboard.inline_keyboard.length > 0 ? keyboard : undefined,
+    reply_markup: replyMarkup,
   });
   return true;
 }

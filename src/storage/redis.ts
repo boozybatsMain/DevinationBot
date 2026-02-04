@@ -14,7 +14,7 @@ export const redis = new Redis({
 
 const storage = new RedisAdapter<SessionData>({
   instance: redis,
-  ttl: 3600, // 1 hour TTL
+  ttl: 86_400, // 24 hours TTL — keeps drafts alive between sessions
 });
 
 /**

@@ -446,6 +446,16 @@ messageBuilderCallbacks.callbackQuery("confirm_send", async (ctx) => {
     return;
   }
 
+  if (!session.message.text && !session.message.imageFileId) {
+    await showStep(
+      ctx,
+      session,
+      "❌ Сообщение пустое. Добавьте текст или изображение перед отправкой.",
+      reviewKeyboard(),
+    );
+    return;
+  }
+
   try {
     // Verify bot is still a member/admin
     const botId = Number(requireEnv("BOT_ID"));
