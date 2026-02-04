@@ -20,7 +20,7 @@ export interface ComposedMessage {
   buttons: MessageButton[][];
 }
 
-/** Info about a group the bot has been added to */
+/** Info about a group or channel the bot has been added to */
 export interface GroupInfo {
   chatId: number;
   title: string;

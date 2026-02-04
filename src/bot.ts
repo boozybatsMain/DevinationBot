@@ -35,11 +35,11 @@ bot.on("my_chat_member", async (ctx) => {
   const newStatus = update.new_chat_member.status;
   const oldStatus = update.old_chat_member.status;
 
-  // Only track group/supergroup chats
-  if (chat.type !== "group" && chat.type !== "supergroup") return;
+  // Only track group/supergroup/channel chats
+  if (chat.type !== "group" && chat.type !== "supergroup" && chat.type !== "channel") return;
 
   const groupChat = chat as { id: number; title?: string; type: string };
-  const chatTitle = groupChat.title ?? `Группа ${groupChat.id}`;
+  const chatTitle = groupChat.title ?? (chat.type === "channel" ? `Канал ${groupChat.id}` : `Группа ${groupChat.id}`);
 
   const isActive = newStatus === "administrator" || newStatus === "member" || newStatus === "creator";
   const wasActive = oldStatus === "administrator" || oldStatus === "member" || oldStatus === "creator";

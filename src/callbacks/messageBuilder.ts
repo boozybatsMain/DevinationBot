@@ -390,7 +390,7 @@ messageBuilderCallbacks.callbackQuery("goto_select_group", async (ctx) => {
     await showStep(
       ctx,
       session,
-      "📢 У вас пока нет групп, куда добавлен бот.\n\nДобавьте бота в группу как администратора, затем нажмите «Обновить список».",
+      "📢 У вас пока нет групп или каналов, куда добавлен бот.\n\nДобавьте бота в группу или канал как администратора, затем нажмите «Обновить список».",
       groupSelectionKeyboard([], botUsername),
     );
   } else {
@@ -414,7 +414,7 @@ messageBuilderCallbacks.callbackQuery("refresh_groups", async (ctx) => {
     ctx,
     session,
     groups.length === 0
-      ? "📢 У вас пока нет групп. Добавьте бота и нажмите «Обновить»."
+      ? "📢 У вас пока нет групп или каналов. Добавьте бота и нажмите «Обновить»."
       : stepText(session, "select_group"),
     groupSelectionKeyboard(groups, botUsername),
   );
@@ -435,7 +435,7 @@ messageBuilderCallbacks.callbackQuery(/^grp:(-?\d+)$/, async (ctx) => {
 
   const groups = await getGroupsForUser(userId);
   const group = groups.find((g) => g.chatId === chatId);
-  const title = group?.title ?? `Группа ${chatId}`;
+  const title = group?.title ?? `Чат ${chatId}`;
 
   await showStep(ctx, session, stepText(session, "confirm_send"), confirmSendKeyboard(title));
 });
@@ -449,7 +449,7 @@ messageBuilderCallbacks.callbackQuery("confirm_send", async (ctx) => {
   const session = await ctx.session;
 
   if (!session.targetGroupId) {
-    await showStep(ctx, session, "❌ Группа не выбрана.", reviewKeyboard());
+    await showStep(ctx, session, "❌ Группа или канал не выбраны.", reviewKeyboard());
     return;
   }
 

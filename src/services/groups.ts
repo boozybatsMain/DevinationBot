@@ -5,7 +5,7 @@ import type { GroupInfo } from "../types/index.js";
 const GROUP_KEY_PREFIX = "user_groups:";
 
 /**
- * Saves a group association for a user (when bot is added to a group).
+ * Saves a group/channel association for a user (when bot is added to a group or channel).
  * Deduplicates by chatId.
  */
 export async function addGroupForUser(
@@ -20,7 +20,7 @@ export async function addGroupForUser(
 }
 
 /**
- * Removes a group association for a user (when bot is removed from a group).
+ * Removes a group/channel association for a user (when bot is removed from a group or channel).
  */
 export async function removeGroupForUser(
   userId: number,
@@ -37,7 +37,7 @@ export async function removeGroupForUser(
 }
 
 /**
- * Returns all groups where a user has added this bot as admin.
+ * Returns all groups/channels where a user has added this bot as admin.
  */
 export async function getGroupsForUser(userId: number): Promise<GroupInfo[]> {
   const key = `${GROUP_KEY_PREFIX}${userId}`;
@@ -51,8 +51,8 @@ export async function getGroupsForUser(userId: number): Promise<GroupInfo[]> {
 }
 
 /**
- * Returns verified groups for a user. Checks that the bot is still a member
- * of each group and removes stale entries (e.g. groups upgraded to supergroups
+ * Returns verified groups/channels for a user. Checks that the bot is still a member
+ * of each chat and removes stale entries (e.g. groups upgraded to supergroups
  * get a new chat ID, leaving orphaned entries).
  */
 export async function getVerifiedGroupsForUser(

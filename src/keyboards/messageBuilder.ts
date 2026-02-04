@@ -141,7 +141,7 @@ export function editButtonKeyboard(row: number, col: number): InlineKeyboard {
 
 export function reviewKeyboard(): InlineKeyboard {
   return new InlineKeyboard()
-    .text("📢 Выбрать группу", "goto_select_group")
+    .text("📢 Выбрать группу / канал", "goto_select_group")
     .row()
     .text("✏️ Редактировать текст", "edit_text")
     .text("🖼 Редактировать фото", "edit_image")
@@ -162,8 +162,13 @@ export function groupSelectionKeyboard(groups: GroupInfo[], botUsername: string)
   }
 
   // Deep link to add bot to a new group with admin rights
-  const addUrl = `https://t.me/${botUsername}?startgroup=botstart&admin=post_messages+delete_messages+edit_messages`;
-  kb.url("➕ Добавить в новую группу", addUrl);
+  const addGroupUrl = `https://t.me/${botUsername}?startgroup=botstart&admin=post_messages+delete_messages+edit_messages`;
+  kb.url("➕ Добавить в группу", addGroupUrl);
+  kb.row();
+
+  // Deep link to add bot to a channel as admin
+  const addChannelUrl = `https://t.me/${botUsername}?startchannel=botstart&admin=post_messages+delete_messages+edit_messages`;
+  kb.url("➕ Добавить в канал", addChannelUrl);
   kb.row();
 
   kb.text("🔄 Обновить список", "refresh_groups");
