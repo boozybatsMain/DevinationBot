@@ -2,7 +2,7 @@ import { Composer, InlineKeyboard } from "grammy";
 import type { MyContext, SessionData, BuilderStep } from "../types/index.js";
 import { createDefaultSession } from "../types/index.js";
 import { buildPreviewText, getStepInstruction } from "../services/preview.js";
-import { getGroupsForUser } from "../services/groups.js";
+import { getGroupsForUser, getVerifiedGroupsForUser } from "../services/groups.js";
 import { sendComposedMessage } from "../services/sender.js";
 import {
   startKeyboard,
@@ -377,7 +377,8 @@ messageBuilderCallbacks.callbackQuery("goto_select_group", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
-  const groups = await getGroupsForUser(userId);
+  const botId = Number(requireEnv("BOT_ID"));
+  const groups = await getVerifiedGroupsForUser(userId, ctx.api, botId);
   const botUsername = requireEnv("BOT_USERNAME");
 
   if (groups.length === 0) {
@@ -400,7 +401,8 @@ messageBuilderCallbacks.callbackQuery("refresh_groups", async (ctx) => {
   const userId = ctx.from?.id;
   if (!userId) return;
 
-  const groups = await getGroupsForUser(userId);
+  const botId = Number(requireEnv("BOT_ID"));
+  const groups = await getVerifiedGroupsForUser(userId, ctx.api, botId);
   const botUsername = requireEnv("BOT_USERNAME");
 
   await showStep(
