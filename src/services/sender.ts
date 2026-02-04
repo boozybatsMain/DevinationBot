@@ -3,8 +3,8 @@ import type { ComposedMessage } from "../types/index.js";
 import { redis } from "../storage/redis.js";
 
 /**
- * Sends the composed message to a target group chat.
- * Handles text-only, photo-above-text, and photo-below-text layouts.
+ * Sends the composed message to a target group/channel chat.
+ * Handles text-only and photo-with-caption layouts.
  * Returns true on success.
  */
 export async function sendComposedMessage(
@@ -28,21 +28,7 @@ export async function sendComposedMessage(
     return true;
   }
 
-  if (msg.imagePosition === "below") {
-    // Text first, then photo below
-    if (msg.text) {
-      await api.sendMessage(chatId, msg.text, {
-        parse_mode: "HTML",
-        reply_markup: replyMarkup,
-      });
-    }
-    await api.sendPhoto(chatId, msg.imageFileId, {
-      reply_markup: !msg.text ? replyMarkup : undefined,
-    });
-    return true;
-  }
-
-  // Default: photo above text (photo with caption)
+  // Photo with caption
   await api.sendPhoto(chatId, msg.imageFileId, {
     caption: msg.text || undefined,
     parse_mode: "HTML",

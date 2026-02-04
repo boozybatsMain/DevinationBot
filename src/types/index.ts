@@ -8,14 +8,10 @@ export interface MessageButton {
   value: string;
 }
 
-/** Image position relative to text */
-export type ImagePosition = "above" | "below";
-
 /** The composed message ready to be sent */
 export interface ComposedMessage {
   text: string;
   imageFileId?: string;
-  imagePosition?: ImagePosition;
   /** 2D array: rows of buttons */
   buttons: MessageButton[][];
 }
@@ -32,7 +28,6 @@ export interface GroupInfo {
  * - write_text: user is writing message text
  * - add_image: asking if user wants to add an image
  * - send_image: waiting for user to send an image
- * - image_position: choose image position (above/below text)
  * - edit_buttons: showing button grid with add/edit controls
  * - btn_text: writing text for a button
  * - btn_action: choosing button action type (url/alert)
@@ -46,7 +41,6 @@ export type BuilderStep =
   | "write_text"
   | "add_image"
   | "send_image"
-  | "image_position"
   | "edit_buttons"
   | "btn_text"
   | "btn_action"

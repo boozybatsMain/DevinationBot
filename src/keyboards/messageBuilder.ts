@@ -1,5 +1,5 @@
 import { InlineKeyboard } from "grammy";
-import type { ComposedMessage, GroupInfo, MessageButton } from "../types/index.js";
+import type { GroupInfo, MessageButton } from "../types/index.js";
 
 // ─── Start / Main ───
 
@@ -28,16 +28,6 @@ export function imageAttachedKeyboard(): InlineKeyboard {
     .text("➡️ Далее", "img_done")
     .row()
     .text("⬅️ Назад", "back_to_text");
-}
-
-// ─── Step: Image Position ───
-
-export function imagePositionKeyboard(): InlineKeyboard {
-  return new InlineKeyboard()
-    .text("⬆️ Над текстом", "imgpos_above")
-    .text("⬇️ Под текстом", "imgpos_below")
-    .row()
-    .text("⬅️ Назад", "back_to_image");
 }
 
 // ─── Step: Button Grid ───

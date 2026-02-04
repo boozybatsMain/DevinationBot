@@ -8,7 +8,6 @@ import {
   startKeyboard,
   addImageKeyboard,
   imageAttachedKeyboard,
-  imagePositionKeyboard,
   buttonGridKeyboard,
   buttonActionKeyboard,
   editButtonKeyboard,
@@ -129,7 +128,6 @@ messageBuilderCallbacks.callbackQuery("img_no", async (ctx) => {
   const session = await ctx.session;
   // Skip image, go to buttons
   session.message.imageFileId = undefined;
-  session.message.imagePosition = undefined;
   session.step = "edit_buttons";
 
   await showStep(ctx, session, stepText(session, "edit_buttons"), buttonGridKeyboard(session.message.buttons));
@@ -148,7 +146,6 @@ messageBuilderCallbacks.callbackQuery("img_remove", async (ctx) => {
   await ctx.answerCallbackQuery();
   const session = await ctx.session;
   session.message.imageFileId = undefined;
-  session.message.imagePosition = undefined;
   session.step = "add_image";
 
   await showStep(ctx, session, stepText(session, "add_image"), addImageKeyboard());
@@ -157,29 +154,7 @@ messageBuilderCallbacks.callbackQuery("img_remove", async (ctx) => {
 messageBuilderCallbacks.callbackQuery("img_done", async (ctx) => {
   await ctx.answerCallbackQuery();
   const session = await ctx.session;
-  // Image is set, go to position selection
-  session.step = "image_position";
-
-  await showStep(ctx, session, stepText(session, "image_position"), imagePositionKeyboard());
-});
-
-// ═══════════════════════════════════════════════════════════════
-//  Step 3: Image Position
-// ═══════════════════════════════════════════════════════════════
-
-messageBuilderCallbacks.callbackQuery("imgpos_above", async (ctx) => {
-  await ctx.answerCallbackQuery();
-  const session = await ctx.session;
-  session.message.imagePosition = "above";
-  session.step = "edit_buttons";
-
-  await showStep(ctx, session, stepText(session, "edit_buttons"), buttonGridKeyboard(session.message.buttons));
-});
-
-messageBuilderCallbacks.callbackQuery("imgpos_below", async (ctx) => {
-  await ctx.answerCallbackQuery();
-  const session = await ctx.session;
-  session.message.imagePosition = "below";
+  // Image is set, go to buttons
   session.step = "edit_buttons";
 
   await showStep(ctx, session, stepText(session, "edit_buttons"), buttonGridKeyboard(session.message.buttons));
@@ -512,14 +487,11 @@ messageBuilderCallbacks.callbackQuery("back_to_image", async (ctx) => {
 messageBuilderCallbacks.callbackQuery("back_to_image_or_pos", async (ctx) => {
   await ctx.answerCallbackQuery();
   const session = await ctx.session;
+  session.step = "add_image";
 
   if (session.message.imageFileId) {
-    // Has image — go back to position choice
-    session.step = "image_position";
-    await showStep(ctx, session, stepText(session, "image_position"), imagePositionKeyboard());
+    await showStep(ctx, session, stepText(session, "add_image"), imageAttachedKeyboard(), { showPhoto: true });
   } else {
-    // No image — go back to add image
-    session.step = "add_image";
     await showStep(ctx, session, stepText(session, "add_image"), addImageKeyboard());
   }
 });

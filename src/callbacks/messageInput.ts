@@ -6,7 +6,6 @@ import {
   imageAttachedKeyboard,
   buttonGridKeyboard,
   buttonActionKeyboard,
-  reviewKeyboard,
 } from "../keyboards/messageBuilder.js";
 
 export const messageInputHandlers = new Composer<MyContext>();
@@ -168,19 +167,7 @@ messageInputHandlers.on("message:photo", async (ctx, next) => {
 
   session.message.imageFileId = bestPhoto.file_id;
 
-  // If no position set yet, ask for position
-  if (!session.message.imagePosition) {
-    session.step = "image_position";
-    await showStep(
-      ctx,
-      session,
-      stepText(session, "image_position"),
-      (await import("../keyboards/messageBuilder.js")).imagePositionKeyboard(),
-      { showPhoto: true },
-    );
-  } else {
-    // Position already chosen (replacing image), go to buttons
-    session.step = "edit_buttons";
-    await showStep(ctx, session, stepText(session, "edit_buttons"), buttonGridKeyboard(session.message.buttons));
-  }
+  // Image received, show it attached and let user proceed
+  session.step = "add_image";
+  await showStep(ctx, session, stepText(session, "add_image"), imageAttachedKeyboard(), { showPhoto: true });
 });
