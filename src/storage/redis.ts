@@ -9,6 +9,7 @@ import { requireEnv } from "../utils/env.js";
 export const redis = new Redis({
   url: requireEnv("UPSTASH_REDIS_REST_URL"),
   token: requireEnv("UPSTASH_REDIS_REST_TOKEN"),
+  automaticDeserialization: false, // RedisAdapter does its own JSON.parse
 });
 
 const storage = new RedisAdapter<SessionData>({
