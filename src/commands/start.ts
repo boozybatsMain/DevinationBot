@@ -5,9 +5,12 @@ import { startKeyboard } from "../keyboards/messageBuilder.js";
 
 /**
  * Handles the /start command. Resets session and shows main menu with
- * "Создать сообщение" button.
+ * "Создать сообщение" button. Only works in private chats.
  */
 export async function handleStart(ctx: CommandContext<MyContext>): Promise<void> {
+  // Ignore /start in groups — bot should only interact in private DMs
+  if (ctx.chat.type !== "private") return;
+
   const session = await ctx.session;
   Object.assign(session, createDefaultSession());
 

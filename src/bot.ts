@@ -41,24 +41,27 @@ bot.on("my_chat_member", async (ctx) => {
   const groupChat = chat as { id: number; title?: string; type: string };
   const chatTitle = groupChat.title ?? `Группа ${groupChat.id}`;
 
-  if (
-    (newStatus === "administrator" || newStatus === "member") &&
-    oldStatus !== "administrator" &&
-    oldStatus !== "member"
-  ) {
-    // Bot was added to the group — associate with the user who added it
+  const isActive = newStatus === "administrator" || newStatus === "member" || newStatus === "creator";
+  const wasActive = oldStatus === "administrator" || oldStatus === "member" || oldStatus === "creator";
+
+  if (isActive && !wasActive) {
+    // Bot joined or was promoted — associate with the user who added it
     await addGroupForUser(from.id, {
       chatId: groupChat.id,
       title: chatTitle,
     });
-    console.log(`Bot added to "${chatTitle}" by user ${from.id}`);
-  } else if (
-    (newStatus === "left" || newStatus === "kicked") &&
-    (oldStatus === "administrator" || oldStatus === "member")
-  ) {
-    // Bot was removed from the group
+    console.log(`Bot added to "${chatTitle}" (${groupChat.id}) by user ${from.id}, status: ${oldStatus} → ${newStatus}`);
+  } else if (!isActive && wasActive) {
+    // Bot was removed or demoted
     await removeGroupForUser(from.id, groupChat.id);
-    console.log(`Bot removed from "${chatTitle}" by user ${from.id}`);
+    console.log(`Bot removed from "${chatTitle}" (${groupChat.id}) by user ${from.id}, status: ${oldStatus} → ${newStatus}`);
+  } else if (isActive && wasActive && newStatus !== oldStatus) {
+    // Status changed but still active (e.g. member → administrator) — update entry
+    await addGroupForUser(from.id, {
+      chatId: groupChat.id,
+      title: chatTitle,
+    });
+    console.log(`Bot status updated in "${chatTitle}" (${groupChat.id}): ${oldStatus} → ${newStatus}`);
   }
 });
 
