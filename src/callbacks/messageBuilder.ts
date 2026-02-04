@@ -20,6 +20,11 @@ import { requireEnv } from "../utils/env.js";
 
 export const messageBuilderCallbacks = new Composer<MyContext>();
 
+/** Escape HTML special chars for Telegram HTML parse mode */
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 // ═══════════════════════════════════════════════════════════════
 //  Utility: send/edit bot message
 // ═══════════════════════════════════════════════════════════════
@@ -459,19 +464,6 @@ messageBuilderCallbacks.callbackQuery("confirm_send", async (ctx) => {
   }
 
   try {
-    // Verify bot is still a member/admin
-    const botId = Number(requireEnv("BOT_ID"));
-    const member = await ctx.api.getChatMember(session.targetGroupId, botId);
-    if (member.status !== "administrator" && member.status !== "creator") {
-      await showStep(
-        ctx,
-        session,
-        "❌ Бот не является администратором в этой группе. Добавьте бота как админа и попробуйте снова.",
-        reviewKeyboard(),
-      );
-      return;
-    }
-
     await sendComposedMessage(ctx.api, session.targetGroupId, session.message);
 
     // Reset session
@@ -480,10 +472,13 @@ messageBuilderCallbacks.callbackQuery("confirm_send", async (ctx) => {
     await showStep(ctx, session, "✅ Сообщение успешно отправлено!", startKeyboard());
   } catch (error) {
     console.error("Failed to send message:", error);
+
+    // Show the actual Telegram error to help debugging
+    const errMsg = error instanceof Error ? error.message : String(error);
     await showStep(
       ctx,
       session,
-      "❌ Не удалось отправить сообщение. Убедитесь, что бот — администратор группы с правом публикации сообщений.",
+      `❌ Не удалось отправить сообщение.\n\n<code>${escapeHtml(errMsg)}</code>`,
       reviewKeyboard(),
     );
   }
@@ -606,4 +601,15 @@ messageBuilderCallbacks.callbackQuery("cancel", async (ctx) => {
 messageBuilderCallbacks.callbackQuery(/^alert:(.+)$/, async (ctx) => {
   const alertText = ctx.match[1]!;
   await ctx.answerCallbackQuery({ text: alertText, show_alert: true });
+});
+
+// Short-key alert: text stored in Redis (for alerts exceeding 64-byte callback limit)
+messageBuilderCallbacks.callbackQuery(/^alrt:(.+)$/, async (ctx) => {
+  const shortId = ctx.match[1]!;
+  const { redis } = await import("../storage/redis.js");
+  const text = await redis.get<string>(`alert:${shortId}`);
+  await ctx.answerCallbackQuery({
+    text: text ?? "⚠️ Уведомление устарело",
+    show_alert: true,
+  });
 });
