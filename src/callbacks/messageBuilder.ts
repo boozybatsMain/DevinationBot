@@ -1,4 +1,4 @@
-import { Composer } from "grammy";
+import { Composer, InlineKeyboard } from "grammy";
 import type { MyContext, SessionData, BuilderStep } from "../types/index.js";
 import { createDefaultSession } from "../types/index.js";
 import { buildPreviewText, getStepInstruction } from "../services/preview.js";
@@ -102,7 +102,7 @@ messageBuilderCallbacks.callbackQuery("create_message", async (ctx) => {
     ctx,
     session,
     getStepInstruction("write_text"),
-    new (await import("grammy")).InlineKeyboard().text("❌ Отмена", "cancel"),
+    new InlineKeyboard().text("❌ Отмена", "cancel"),
   );
 });
 
@@ -115,7 +115,7 @@ messageBuilderCallbacks.callbackQuery("img_yes", async (ctx) => {
   const session = await ctx.session;
   session.step = "send_image";
 
-  const { InlineKeyboard } = await import("grammy");
+
   await showStep(ctx, session, stepText(session, "send_image"), new InlineKeyboard().text("⬅️ Назад", "back_to_image"));
 });
 
@@ -135,7 +135,7 @@ messageBuilderCallbacks.callbackQuery("img_replace", async (ctx) => {
   const session = await ctx.session;
   session.step = "send_image";
 
-  const { InlineKeyboard } = await import("grammy");
+
   await showStep(ctx, session, stepText(session, "send_image"), new InlineKeyboard().text("⬅️ Назад", "back_to_image"));
 });
 
@@ -195,7 +195,7 @@ messageBuilderCallbacks.callbackQuery(/^\+r:(\d+)$/, async (ctx) => {
   session.editingButton = { row: rowIdx, col: 0, isNew: true };
   session.step = "btn_text";
 
-  const { InlineKeyboard } = await import("grammy");
+
   await showStep(ctx, session, stepText(session, "btn_text"), new InlineKeyboard().text("⬅️ Назад", "back_to_buttons"));
 });
 
@@ -209,7 +209,7 @@ messageBuilderCallbacks.callbackQuery(/^\+c:(\d+):(\d+)$/, async (ctx) => {
   session.editingButton = { row: rowIdx, col: colIdx, isNew: true };
   session.step = "btn_text";
 
-  const { InlineKeyboard } = await import("grammy");
+
   await showStep(ctx, session, stepText(session, "btn_text"), new InlineKeyboard().text("⬅️ Назад", "back_to_buttons"));
 });
 
@@ -248,7 +248,7 @@ messageBuilderCallbacks.callbackQuery(/^btn_edit:(\d+):(\d+)$/, async (ctx) => {
   session.editingButton = { row: rowIdx, col: colIdx, isNew: false };
   session.step = "btn_text";
 
-  const { InlineKeyboard } = await import("grammy");
+
   await showStep(ctx, session, stepText(session, "btn_text"), new InlineKeyboard().text("⬅️ Назад", "back_to_buttons"));
 });
 
@@ -305,7 +305,7 @@ messageBuilderCallbacks.callbackQuery("btnact_url", async (ctx) => {
   session.step = "btn_value";
   session.pendingButtonAction = "url";
 
-  const { InlineKeyboard } = await import("grammy");
+
   await showStep(
     ctx,
     session,
@@ -320,7 +320,7 @@ messageBuilderCallbacks.callbackQuery("btnact_alert", async (ctx) => {
   session.step = "btn_value";
   session.pendingButtonAction = "alert";
 
-  const { InlineKeyboard } = await import("grammy");
+
   await showStep(
     ctx,
     session,
@@ -339,7 +339,7 @@ messageBuilderCallbacks.callbackQuery("edit_text", async (ctx) => {
   const session = await ctx.session;
   session.step = "write_text";
 
-  const { InlineKeyboard } = await import("grammy");
+
   await showStep(ctx, session, stepText(session, "write_text"), new InlineKeyboard().text("⬅️ Назад", "back_to_review_direct"));
 });
 
@@ -486,7 +486,7 @@ messageBuilderCallbacks.callbackQuery("back_to_text", async (ctx) => {
   const session = await ctx.session;
   session.step = "write_text";
 
-  const { InlineKeyboard } = await import("grammy");
+
   await showStep(ctx, session, stepText(session, "write_text"), new InlineKeyboard().text("❌ Отмена", "cancel"));
 });
 
