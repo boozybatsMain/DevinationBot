@@ -11,6 +11,17 @@ import {
 export const attachButtonsCallbacks = new Composer<MyContext>();
 
 // ═══════════════════════════════════════════════════════════════
+//  Utility: Ensure attachFlow exists (for sessions created before this feature)
+// ═══════════════════════════════════════════════════════════════
+
+function ensureAttachFlow(session: SessionData): SessionData["attachFlow"] {
+  if (!session.attachFlow) {
+    session.attachFlow = { step: "attach_idle", buttons: [] };
+  }
+  return session.attachFlow;
+}
+
+// ═══════════════════════════════════════════════════════════════
 //  Utility: Show step (reusable pattern)
 // ═══════════════════════════════════════════════════════════════
 
@@ -100,7 +111,7 @@ attachButtonsCallbacks.callbackQuery(/^ab_\+r:(\d+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
   const session = await ctx.session;
   const rowIdx = parseInt(ctx.match[1]!, 10);
-  const af = session.attachFlow;
+  const af = ensureAttachFlow(session);
 
   // Insert empty row and start button creation
   af.buttons.splice(rowIdx, 0, []);
@@ -123,7 +134,7 @@ attachButtonsCallbacks.callbackQuery(/^ab_\+c:(\d+):(\d+)$/, async (ctx) => {
   const session = await ctx.session;
   const rowIdx = parseInt(ctx.match[1]!, 10);
   const colIdx = parseInt(ctx.match[2]!, 10);
-  const af = session.attachFlow;
+  const af = ensureAttachFlow(session);
 
   af.editingButton = { row: rowIdx, col: colIdx, isNew: true };
   af.pendingButtonText = undefined;
@@ -143,7 +154,7 @@ attachButtonsCallbacks.callbackQuery(/^ab_eb:(\d+):(\d+)$/, async (ctx) => {
   const session = await ctx.session;
   const rowIdx = parseInt(ctx.match[1]!, 10);
   const colIdx = parseInt(ctx.match[2]!, 10);
-  const af = session.attachFlow;
+  const af = ensureAttachFlow(session);
   const btn = af.buttons[rowIdx]?.[colIdx];
 
   if (!btn) {
@@ -174,7 +185,7 @@ attachButtonsCallbacks.callbackQuery(/^ab_btn_edit:(\d+):(\d+)$/, async (ctx) =>
   const session = await ctx.session;
   const rowIdx = parseInt(ctx.match[1]!, 10);
   const colIdx = parseInt(ctx.match[2]!, 10);
-  const af = session.attachFlow;
+  const af = ensureAttachFlow(session);
 
   af.editingButton = { row: rowIdx, col: colIdx, isNew: false };
   af.pendingButtonText = undefined;
@@ -194,7 +205,7 @@ attachButtonsCallbacks.callbackQuery(/^ab_btn_del:(\d+):(\d+)$/, async (ctx) => 
   const session = await ctx.session;
   const rowIdx = parseInt(ctx.match[1]!, 10);
   const colIdx = parseInt(ctx.match[2]!, 10);
-  const af = session.attachFlow;
+  const af = ensureAttachFlow(session);
 
   const row = af.buttons[rowIdx];
   if (row) {
@@ -210,7 +221,7 @@ attachButtonsCallbacks.callbackQuery(/^ab_btn_del:(\d+):(\d+)$/, async (ctx) => 
 // Buttons done → awaiting URL
 attachButtonsCallbacks.callbackQuery("ab_buttons_done", async (ctx) => {
   const session = await ctx.session;
-  const af = session.attachFlow;
+  const af = ensureAttachFlow(session);
 
   if (af.buttons.length === 0) {
     await ctx.answerCallbackQuery({ text: "Добавьте хотя бы одну кнопку", show_alert: true });
@@ -276,7 +287,7 @@ attachButtonsCallbacks.callbackQuery("ab_btnact_alert", async (ctx) => {
 attachButtonsCallbacks.callbackQuery("ab_back_to_buttons", async (ctx) => {
   await ctx.answerCallbackQuery();
   const session = await ctx.session;
-  const af = session.attachFlow;
+  const af = ensureAttachFlow(session);
 
   // Clean up if we were adding a new button to an empty row
   if (af.editingButton?.isNew) {

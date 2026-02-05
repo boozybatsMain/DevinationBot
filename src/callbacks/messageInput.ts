@@ -184,6 +184,12 @@ messageInputHandlers.on("message:photo", async (ctx, next) => {
 
 messageInputHandlers.on("message:text", async (ctx, next) => {
   const session = await ctx.session;
+
+  // Initialize attachFlow if missing (for sessions created before this feature)
+  if (!session.attachFlow) {
+    session.attachFlow = { step: "attach_idle", buttons: [] };
+  }
+
   const af = session.attachFlow;
 
   // Only handle if we're in attach flow and expecting input
