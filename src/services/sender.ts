@@ -70,3 +70,14 @@ async function buildInlineKeyboard(
   }
   return keyboard;
 }
+
+/**
+ * Builds an InlineKeyboard for attaching to existing messages.
+ * Exported for use by the attach buttons flow.
+ * Alert texts that exceed callback_data limit are stored in Redis.
+ */
+export async function buildAttachInlineKeyboard(
+  buttons: ComposedMessage["buttons"],
+): Promise<InlineKeyboard> {
+  return buildInlineKeyboard(buttons);
+}

@@ -49,6 +49,32 @@ export type BuilderStep =
   | "select_group"
   | "confirm_send";
 
+/**
+ * Steps in the "attach buttons to existing message" flow.
+ * - attach_idle: not in attach flow
+ * - attach_edit_buttons: creating/editing buttons
+ * - attach_awaiting_url: waiting for message URL
+ */
+export type AttachStep =
+  | "attach_idle"
+  | "attach_edit_buttons"
+  | "attach_awaiting_url";
+
+/**
+ * Data for the "attach buttons" flow.
+ * Kept separate from main message builder to allow independent operation.
+ */
+export interface AttachFlowData {
+  step: AttachStep;
+  buttons: MessageButton[][];
+  /** Currently editing button position */
+  editingButton?: { row: number; col: number; isNew: boolean };
+  /** Temp storage for button text */
+  pendingButtonText?: string;
+  /** Temp storage for button action type */
+  pendingButtonAction?: "url" | "alert";
+}
+
 export interface SessionData {
   step: BuilderStep;
 
@@ -72,6 +98,9 @@ export interface SessionData {
 
   /** Whether the last bot message is a photo (vs text) */
   lastBotMessageIsPhoto?: boolean;
+
+  /** Data for "attach buttons to existing message" flow */
+  attachFlow: AttachFlowData;
 }
 
 export type MyContext = Context & LazySessionFlavor<SessionData>;
@@ -82,6 +111,10 @@ export function createDefaultSession(): SessionData {
     step: "idle",
     message: {
       text: "",
+      buttons: [],
+    },
+    attachFlow: {
+      step: "attach_idle",
       buttons: [],
     },
   };

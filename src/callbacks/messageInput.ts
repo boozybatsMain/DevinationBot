@@ -6,7 +6,13 @@ import {
   imageAttachedKeyboard,
   buttonGridKeyboard,
   buttonActionKeyboard,
+  attachButtonGridKeyboard,
+  attachButtonActionKeyboard,
+  attachAwaitingUrlKeyboard,
+  startKeyboard,
 } from "../keyboards/messageBuilder.js";
+import { parseMessageLink } from "../utils/messageLink.js";
+import { buildAttachInlineKeyboard } from "../services/sender.js";
 
 export const messageInputHandlers = new Composer<MyContext>();
 
@@ -171,3 +177,163 @@ messageInputHandlers.on("message:photo", async (ctx, next) => {
   session.step = "add_image";
   await showStep(ctx, session, stepText(session, "add_image"), imageAttachedKeyboard(), { showPhoto: true });
 });
+
+// ═══════════════════════════════════════════════════════════════
+//  Handle text messages for ATTACH BUTTONS flow
+// ═══════════════════════════════════════════════════════════════
+
+messageInputHandlers.on("message:text", async (ctx, next) => {
+  const session = await ctx.session;
+  const af = session.attachFlow;
+
+  // Only handle if we're in attach flow and expecting input
+  if (af.step === "attach_idle") {
+    return next();
+  }
+
+  const chatId = ctx.chat?.id;
+  if (!chatId) return next();
+
+  // Helper to show step
+  const show = async (text: string, keyboard: InlineKeyboard) => {
+    // Delete previous bot message
+    if (session.lastBotMessageId) {
+      try {
+        await ctx.api.deleteMessage(chatId, session.lastBotMessageId);
+      } catch {
+        // ignore
+      }
+      session.lastBotMessageId = undefined;
+    }
+    // Delete user's message
+    if (ctx.message?.message_id) {
+      try {
+        await ctx.api.deleteMessage(chatId, ctx.message.message_id);
+      } catch {
+        // ignore
+      }
+    }
+    const sentMsg = await ctx.api.sendMessage(chatId, text, {
+      parse_mode: "HTML",
+      reply_markup: keyboard,
+      link_preview_options: { is_disabled: true },
+    });
+    session.lastBotMessageId = sentMsg.message_id;
+  };
+
+  // Build preview text
+  const buildPreview = () => {
+    if (af.buttons.length === 0) return "<i>Кнопки пока не добавлены</i>";
+    const lines = ["<b>Кнопки:</b>"];
+    for (const row of af.buttons) {
+      const rowText = row
+        .map((btn) => `[${btn.action === "url" ? "🔗" : "💬"} ${btn.text}]`)
+        .join(" ");
+      lines.push(rowText);
+    }
+    return lines.join("\n");
+  };
+
+  const buildStepText = () => [
+    "🔘 <b>Добавление кнопок к посту</b>",
+    "",
+    buildPreview(),
+    "",
+    "─────────────────",
+    "",
+    "🔘 Настройте кнопки:",
+  ].join("\n");
+
+  // Handle button text input (when editingButton is set but no pendingButtonText yet)
+  if (af.editingButton && !af.pendingButtonText && !af.pendingButtonAction) {
+    af.pendingButtonText = ctx.message.text;
+    await show("⚡ Что делать при нажатии на кнопку?", attachButtonActionKeyboard());
+    return;
+  }
+
+  // Handle button value input (when pendingButtonAction is set)
+  if (af.editingButton && af.pendingButtonText && af.pendingButtonAction) {
+    const value = ctx.message.text;
+    const editing = af.editingButton;
+    const btnText = af.pendingButtonText;
+    const action = af.pendingButtonAction;
+
+    const newButton = { text: btnText, action, value };
+
+    if (editing.isNew) {
+      if (!af.buttons[editing.row]) {
+        af.buttons[editing.row] = [];
+      }
+      af.buttons[editing.row]!.splice(editing.col, 0, newButton);
+    } else {
+      if (af.buttons[editing.row]) {
+        af.buttons[editing.row]![editing.col] = newButton;
+      }
+    }
+
+    // Clean up
+    af.editingButton = undefined;
+    af.pendingButtonText = undefined;
+    af.pendingButtonAction = undefined;
+
+    await show(buildStepText(), attachButtonGridKeyboard(af.buttons));
+    return;
+  }
+
+  // Handle message URL input
+  if (af.step === "attach_awaiting_url") {
+    const url = ctx.message.text;
+    const parsed = parseMessageLink(url);
+
+    if (!parsed) {
+      await show(
+        [
+          "❌ <b>Неверный формат ссылки</b>",
+          "",
+          "Отправьте ссылку вида:",
+          "• <code>https://t.me/channel_name/123</code>",
+          "• <code>https://t.me/c/1234567890/123</code>",
+        ].join("\n"),
+        attachAwaitingUrlKeyboard(),
+      );
+      return;
+    }
+
+    // Try to attach buttons
+    try {
+      const keyboard = await buildAttachInlineKeyboard(af.buttons);
+      await ctx.api.editMessageReplyMarkup(parsed.chatId, parsed.messageId, {
+        reply_markup: keyboard,
+      });
+
+      // Success! Reset flow
+      session.attachFlow = { step: "attach_idle", buttons: [] };
+      await show("✅ Кнопки успешно добавлены к сообщению!", startKeyboard());
+    } catch (error) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      let userMessage: string;
+
+      if (errMsg.includes("not enough rights") || errMsg.includes("CHAT_ADMIN_REQUIRED")) {
+        userMessage = "❌ Бот не является администратором в этом канале/группе.\n\nДобавьте бота как администратора с правом редактирования сообщений.";
+      } else if (errMsg.includes("message to edit not found") || errMsg.includes("MESSAGE_ID_INVALID")) {
+        userMessage = "❌ Сообщение не найдено.\n\nВозможно, оно было удалено или ссылка неверна.";
+      } else if (errMsg.includes("message can't be edited")) {
+        userMessage = "❌ Это сообщение нельзя редактировать.\n\nБот может добавлять кнопки только к сообщениям в каналах/группах, где он администратор.";
+      } else if (errMsg.includes("chat not found") || errMsg.includes("CHAT_NOT_FOUND")) {
+        userMessage = "❌ Канал или группа не найдены.\n\nПроверьте ссылку и убедитесь, что бот добавлен в этот чат.";
+      } else {
+        userMessage = `❌ Не удалось добавить кнопки.\n\n<code>${escapeHtml(errMsg)}</code>`;
+      }
+
+      await show(userMessage, attachAwaitingUrlKeyboard());
+    }
+    return;
+  }
+
+  return next();
+});
+
+// Helper for escaping HTML
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}

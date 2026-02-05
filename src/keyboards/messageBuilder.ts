@@ -5,7 +5,10 @@ import type { GroupInfo, MessageButton } from "../types/index.js";
 
 /** Main menu keyboard shown on /start */
 export function startKeyboard(): InlineKeyboard {
-  return new InlineKeyboard().text("📝 Создать сообщение", "create_message");
+  return new InlineKeyboard()
+    .text("📝 Создать сообщение", "create_message")
+    .row()
+    .text("🔘 Добавить кнопки к посту", "attach_buttons_start");
 }
 
 // ─── Step: Add Image ───
@@ -182,4 +185,95 @@ export function confirmSendKeyboard(groupTitle: string): InlineKeyboard {
 function truncate(text: string, maxLen: number): string {
   if (text.length <= maxLen) return text;
   return text.slice(0, maxLen - 1) + "…";
+}
+
+// ─── Attach Buttons Flow ───
+
+/**
+ * Button grid for attach flow (similar to main builder but different callbacks).
+ * Uses "ab_" prefix for all callback data to distinguish from main flow.
+ */
+export function attachButtonGridKeyboard(buttons: MessageButton[][]): InlineKeyboard {
+  const kb = new InlineKeyboard();
+
+  if (buttons.length === 0) {
+    kb.text("➕ Добавить кнопку", "ab_+r:0");
+    kb.row();
+    kb.text("❌ Отмена", "ab_cancel");
+    return kb;
+  }
+
+  for (let r = 0; r < buttons.length; r++) {
+    const row = buttons[r]!;
+
+    // Row of + buttons above
+    kb.text("   ", "noop");
+    for (let c = 0; c < row.length; c++) {
+      kb.text("➕ ↑", `ab_+r:${r}`);
+      if (c < row.length - 1) {
+        kb.text("   ", "noop");
+      }
+    }
+    kb.text("   ", "noop");
+    kb.row();
+
+    // The actual button row
+    kb.text("➕ ←", `ab_+c:${r}:0`);
+    for (let c = 0; c < row.length; c++) {
+      const btn = row[c]!;
+      const icon = btn.action === "url" ? "🔗" : "💬";
+      kb.text(`${icon} ${truncate(btn.text, 12)}`, `ab_eb:${r}:${c}`);
+      if (c < row.length - 1) {
+        kb.text("➕", `ab_+c:${r}:${c + 1}`);
+      }
+    }
+    kb.text("➕ →", `ab_+c:${r}:${row.length}`);
+    kb.row();
+  }
+
+  // Bottom + row
+  const lastRow = buttons[buttons.length - 1]!;
+  kb.text("   ", "noop");
+  for (let c = 0; c < lastRow.length; c++) {
+    kb.text("➕ ↓", `ab_+r:${buttons.length}`);
+    if (c < lastRow.length - 1) {
+      kb.text("   ", "noop");
+    }
+  }
+  kb.text("   ", "noop");
+  kb.row();
+
+  // Navigation
+  kb.text("✅ Готово — ввести ссылку", "ab_buttons_done");
+  kb.row();
+  kb.text("❌ Отмена", "ab_cancel");
+
+  return kb;
+}
+
+/** Button action choice for attach flow */
+export function attachButtonActionKeyboard(): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("🔗 Ссылка (URL)", "ab_btnact_url")
+    .row()
+    .text("💬 Всплывающее уведомление", "ab_btnact_alert")
+    .row()
+    .text("⬅️ Назад", "ab_back_to_buttons");
+}
+
+/** Edit existing button menu for attach flow */
+export function attachEditButtonKeyboard(row: number, col: number): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("✏️ Изменить", `ab_btn_edit:${row}:${col}`)
+    .text("🗑 Удалить", `ab_btn_del:${row}:${col}`)
+    .row()
+    .text("⬅️ Назад", "ab_back_to_buttons");
+}
+
+/** Awaiting URL keyboard */
+export function attachAwaitingUrlKeyboard(): InlineKeyboard {
+  return new InlineKeyboard()
+    .text("⬅️ Назад к кнопкам", "ab_back_to_buttons")
+    .row()
+    .text("❌ Отмена", "ab_cancel");
 }
