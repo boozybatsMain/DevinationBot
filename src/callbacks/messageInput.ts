@@ -308,6 +308,7 @@ messageInputHandlers.on("message:text", async (ctx, next) => {
     // Try to attach buttons
     try {
       const keyboard = await buildAttachInlineKeyboard(af.buttons);
+      console.log(`[attach] Attempting editMessageReplyMarkup: chatId=${JSON.stringify(parsed.chatId)}, messageId=${parsed.messageId}, buttons=${af.buttons.length} rows`);
       await ctx.api.editMessageReplyMarkup(parsed.chatId, parsed.messageId, {
         reply_markup: keyboard,
       });
@@ -317,19 +318,10 @@ messageInputHandlers.on("message:text", async (ctx, next) => {
       await show("✅ Кнопки успешно добавлены к сообщению!", startKeyboard());
     } catch (error) {
       const errMsg = error instanceof Error ? error.message : String(error);
-      let userMessage: string;
+      console.error(`[attach] editMessageReplyMarkup failed: chatId=${JSON.stringify(parsed.chatId)}, messageId=${parsed.messageId}, error=${errMsg}`);
 
-      if (errMsg.includes("not enough rights") || errMsg.includes("CHAT_ADMIN_REQUIRED")) {
-        userMessage = "❌ Бот не является администратором в этом канале/группе.\n\nДобавьте бота как администратора с правом редактирования сообщений.";
-      } else if (errMsg.includes("message to edit not found") || errMsg.includes("MESSAGE_ID_INVALID")) {
-        userMessage = "❌ Сообщение не найдено.\n\nВозможно, оно было удалено или ссылка неверна.";
-      } else if (errMsg.includes("message can't be edited")) {
-        userMessage = "❌ Это сообщение нельзя редактировать.\n\nБот может добавлять кнопки только к сообщениям в каналах/группах, где он администратор.";
-      } else if (errMsg.includes("chat not found") || errMsg.includes("CHAT_NOT_FOUND")) {
-        userMessage = "❌ Канал или группа не найдены.\n\nПроверьте ссылку и убедитесь, что бот добавлен в этот чат.";
-      } else {
-        userMessage = `❌ Не удалось добавить кнопки.\n\n<code>${escapeHtml(errMsg)}</code>`;
-      }
+      // Always show the raw Telegram error for debugging
+      const userMessage = `❌ Не удалось добавить кнопки.\n\nchatId: <code>${escapeHtml(String(parsed.chatId))}</code>\nmessageId: <code>${parsed.messageId}</code>\n\nОшибка: <code>${escapeHtml(errMsg)}</code>`;
 
       await show(userMessage, attachAwaitingUrlKeyboard());
     }
